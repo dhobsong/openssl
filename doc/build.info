@@ -1431,6 +1431,10 @@ DEPEND[html/man3/HMAC.html]=man3/HMAC.pod
 GENERATE[html/man3/HMAC.html]=man3/HMAC.pod
 DEPEND[man/man3/HMAC.3]=man3/HMAC.pod
 GENERATE[man/man3/HMAC.3]=man3/HMAC.pod
+DEPEND[html/man3/IETF_ATTR_SYNTAX.html]=man3/IETF_ATTR_SYNTAX.pod
+GENERATE[html/man3/IETF_ATTR_SYNTAX.html]=man3/IETF_ATTR_SYNTAX.pod
+DEPEND[man/man3/IETF_ATTR_SYNTAX.3]=man3/IETF_ATTR_SYNTAX.pod
+GENERATE[man/man3/IETF_ATTR_SYNTAX.3]=man3/IETF_ATTR_SYNTAX.pod
 DEPEND[html/man3/MD5.html]=man3/MD5.pod
 GENERATE[html/man3/MD5.html]=man3/MD5.pod
 DEPEND[man/man3/MD5.3]=man3/MD5.pod
@@ -3081,6 +3085,7 @@ html/man3/EVP_sm3.html \
 html/man3/EVP_sm4_cbc.html \
 html/man3/EVP_whirlpool.html \
 html/man3/HMAC.html \
+html/man3/IETF_ATTR_SYNTAX.html \
 html/man3/MD5.html \
 html/man3/MDC2_Init.html \
 html/man3/NCONF_new_ex.html \
@@ -3674,6 +3679,7 @@ man/man3/EVP_sm3.3 \
 man/man3/EVP_sm4_cbc.3 \
 man/man3/EVP_whirlpool.3 \
 man/man3/HMAC.3 \
+man/man3/IETF_ATTR_SYNTAX.3 \
 man/man3/MD5.3 \
 man/man3/MDC2_Init.3 \
 man/man3/NCONF_new_ex.3 \
