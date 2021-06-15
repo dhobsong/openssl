@@ -256,6 +256,8 @@ int do_X509_REQ_verify(X509_REQ *x, EVP_PKEY *pkey,
                        STACK_OF(OPENSSL_STRING) *vfyopts);
 int do_X509_CRL_sign(X509_CRL *x, EVP_PKEY *pkey, const char *md,
                      STACK_OF(OPENSSL_STRING) *sigopts);
+int do_X509_ACERT_sign(X509_ACERT *x, EVP_PKEY *pkey, const char *md,
+                     STACK_OF(OPENSSL_STRING) *sigopts);
 
 extern char *psk_key;
 

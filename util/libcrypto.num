@@ -5514,3 +5514,5 @@ IETF_ATTR_SYNTAX_print                  ?	3_0_0	EXIST::FUNCTION:
 X509_ACERT_add_attr_nconf               ?	3_0_0	EXIST::FUNCTION:
 X509V3_EXT_ACERT_add_nconf              ?	3_0_0	EXIST::FUNCTION:
 X509V3_EXT_ACERT_add_conf               ?	3_0_0	EXIST::FUNCTION:
+X509_ACERT_verify                       ?	3_0_0	EXIST::FUNCTION:
+X509_ACERT_verify_cert                  ?	3_0_0	EXIST::FUNCTION:
