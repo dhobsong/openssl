@@ -361,6 +361,18 @@ int X509V3_EXT_CRL_add_nconf(CONF *conf, X509V3_CTX *ctx, const char *section,
 }
 
 /*
+ * Add extensions to an ACERT. Just check in case acert == NULL.
+ * Note that on error new elements may remain added to acert if acert != NULL.
+ */
+int X509V3_EXT_ACERT_add_nconf(CONF *conf, X509V3_CTX *ctx, const char *section,
+                               X509_ACERT *acert)
+{
+    STACK_OF(X509_EXTENSION) **sk = NULL;
+    if (acert != NULL)
+        sk = &acert->acinfo->extensions;
+    return X509V3_EXT_add_nconf_sk(conf, ctx, section, sk);
+}
+/*
  * Add extensions to certificate request. Just check in case req is NULL.
  * Note that on error new elements may remain added to req if req != NULL.
  */
@@ -558,6 +570,22 @@ int X509V3_EXT_CRL_add_conf(LHASH_OF(CONF_VALUE) *conf, X509V3_CTX *ctx,
         return 0;
     CONF_set_nconf(ctmp, conf);
     ret = X509V3_EXT_CRL_add_nconf(ctmp, ctx, section, crl);
+    NCONF_free(ctmp);
+    return ret;
+}
+
+/* Same as above but for an X509_ACERT */
+
+int X509V3_EXT_ACERT_add_conf(LHASH_OF(CONF_VALUE) *conf, X509V3_CTX *ctx,
+                              const char *section, X509_ACERT *acert)
+{
+    CONF *ctmp;
+    int ret;
+
+    if ((ctmp = NCONF_new(NULL)) == NULL)
+        return 0;
+    CONF_set_nconf(ctmp, conf);
+    ret = X509V3_EXT_ACERT_add_nconf(ctmp, ctx, section, acert);
     NCONF_free(ctmp);
     return ret;
 }
