@@ -11,6 +11,7 @@
 #include <string.h>
 #include <crypto/ctype.h>
 #include <openssl/asn1t.h>
+#include <openssl/err.h>
 #include <openssl/x509.h>
 #include <openssl/x509v3.h>
 #include "x509_acert.h"
@@ -305,5 +306,166 @@ int X509_ACERT_add_attr_nconf(CONF *conf, const char *section,
     }
     ret = 1;
 err:
+    return ret;
+}
+
+static int check_acert_extensions(X509_ACERT *acert)
+{
+    const STACK_OF(X509_EXTENSION) *exts;
+    int i;
+
+    if ((exts = X509_ACERT_get0_extensions(acert)) == NULL)
+        return 1;
+
+    for (i = 0; i < sk_X509_EXTENSION_num(exts); i++) {
+        X509_EXTENSION *ext = sk_X509_EXTENSION_value(exts, i);
+        int nid = OBJ_obj2nid(X509_EXTENSION_get_object(ext));
+
+        if (X509_EXTENSION_get_critical(ext) == 0)
+            continue;
+
+        /*
+         * None of the critical extenstion are handled right now, so
+         * just fail for everything
+         */
+        switch (nid) {
+        case NID_ac_auditEntity:
+        case NID_target_information:
+        default:
+            ERR_raise(ERR_LIB_X509, X509_V_ERR_UNHANDLED_CRITICAL_EXTENSION);
+            return 0;
+        }
+    }
+    return 1;
+}
+
+/*
+ * For now only give the X509_ACERT to be verified, and the holder and
+ * issuer certificate pointers.  The assumption is that the holder
+ * certificate has already been verified as part of some identity
+ * confirmation process. The issuer has likewise also been verified.
+ * This function just verifies that the information attribute certificate
+ * corresponds to the provided x509 certificates, as well as cecking
+ * the validity period, signature, and processing any extensions.
+ */
+
+int X509_ACERT_verify_cert(X509_ACERT *acert, X509 *holder, X509 *issuer)
+{
+    int ret = 0;
+    ISSUER_SERIAL *basecertid;
+    const GENERAL_NAMES *holder_ent;
+    const X509_NAME *entity;
+    AUTHORITY_KEYID *akid;
+
+    int holder_verified = 0;
+
+    if (check_acert_extensions(acert) == 0)
+        goto out;
+
+    /*
+     * Check that holder cert matches attribute cert holder field.
+     * This can be done withi *either* the baseCertificateId or the
+     * entityName.  RFC 5755 recommends that only one option is used
+     * for a given AC, but in case both are present, baseCertificateId
+     * takes precedence.
+     */
+    if ((basecertid = X509_ACERT_get0_holder_baseCertId(acert)) != NULL) {
+        if (X509_NAME_cmp(ISSUER_SERIAL_get0_issuer(basecertid),
+                          X509_get_issuer_name(holder)) != 0
+            || ASN1_STRING_cmp(ISSUER_SERIAL_get0_serial(basecertid),
+                               X509_get0_serialNumber(holder)) != 0) {
+            goto out;
+        }
+        holder_verified = 1;
+    }
+
+    if (holder_verified == 0
+            && (holder_ent = X509_ACERT_get0_holder_entityName(acert)) != NULL
+            && sk_GENERAL_NAME_num(holder_ent) >= 1) {
+        GENERAL_NAMES *holderAltNames;
+        GENERAL_NAME *entName = sk_GENERAL_NAME_value(holder_ent, 0);
+        int i;
+
+        if (entName->type == GEN_DIRNAME
+            && X509_NAME_cmp(entName->d.directoryName, X509_get_subject_name(holder)) == 0)
+            holder_verified = 1;
+
+        if (holder_verified == 0
+            && (holderAltNames = X509_get_ext_d2i(holder, NID_subject_alt_name,
+                                                  NULL, NULL)) != NULL) {
+            for (i = 0; i < sk_GENERAL_NAME_num(holderAltNames); i++) {
+                GENERAL_NAME *name = sk_GENERAL_NAME_value(holderAltNames, i);
+
+                if (GENERAL_NAME_cmp(name, entName) == 0) {
+                    holder_verified = 1;
+                    break;
+                }
+            }
+        }
+    }
+
+    if (holder_verified == 0)
+        /* TODO: New error code to indicate that holder doesn't match */
+        goto out;
+
+    /*
+     * Check that issuer cert matches attribute cert issuer field,
+     * and AKID if present.
+     */
+    if ((entity = X509_ACERT_get0_issuerName(acert)) == NULL
+            || X509_NAME_cmp(entity, X509_get_subject_name(issuer)) != 0) {
+        ERR_raise(ERR_LIB_X509, X509_V_ERR_SUBJECT_ISSUER_MISMATCH);
+        goto out;
+    }
+
+    /*
+     * Check that the issuer satisfies the AC issuer profile in
+     * RFC 5755 Section 4.5.  This will also cache the attached
+     * X509v3 extensions, which must be done before calling
+     * X509_check_akid() and X509_check_ca() to get valid results.
+     */
+    if ((X509_get_key_usage(issuer) & X509v3_KU_DIGITAL_SIGNATURE) == 0) {
+        ERR_raise(ERR_LIB_X509, X509_V_ERR_KEYUSAGE_NO_DIGITAL_SIGNATURE);
+        goto out;
+    }
+
+    /* TODO: wrap this in X509_ACERT_get_ext_d2i) */
+    if ((akid = X509V3_get_d2i(acert->acinfo->extensions,
+                               NID_authority_key_identifier, NULL, NULL))
+             != NULL) {
+        if (X509_check_akid(issuer, akid))
+            goto out;
+    }
+
+    if (X509_ACERT_verify(acert, X509_get0_pubkey(issuer)) <= 0) {
+        ERR_raise(ERR_LIB_X509, X509_V_ERR_CERT_SIGNATURE_FAILURE);
+        goto out;
+    }
+
+    /*
+     * extensions have been cached by X509_get_key_usage(), so X509_check_ca()
+     * can't fail and will only return 0 if `issuer` is not a CA.
+     */
+    if (X509_check_ca(issuer) != 0) {
+        /*
+         * TODO: New error code to indicate that issuer is a CA when it
+         * shouldn't be
+         */
+        goto out;
+    }
+
+    if (X509_cmp_time(X509_ACERT_get0_notBefore(acert), NULL) > 0) {
+        ERR_raise(ERR_LIB_X509, X509_V_ERR_CERT_NOT_YET_VALID);
+        goto out;
+    }
+
+    if (X509_cmp_time(X509_ACERT_get0_notAfter(acert), NULL) < 0) {
+        ERR_raise(ERR_LIB_X509, X509_V_ERR_CERT_HAS_EXPIRED);
+        goto out;
+    }
+
+    ret = 1;
+
+out:
     return ret;
 }

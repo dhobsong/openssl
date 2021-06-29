@@ -821,6 +821,8 @@ void X509_ACERT_set0_holder_baseCertId(X509_ACERT *x, ISSUER_SERIAL *isss);
 void X509_ACERT_set0_holder_digest(X509_ACERT *x,
                                    OBJECT_DIGEST_INFO *dinfo);
 
+int X509_ACERT_verify_cert(X509_ACERT *acert, X509 *holder, X509 *issuer);
+
 int X509_ACERT_add1_attr(X509_ACERT *x, X509_ATTRIBUTE *attr);
 int X509_ACERT_add1_attr_by_OBJ(X509_ACERT *x, const ASN1_OBJECT *obj,
                                 int type, const void *bytes, int len);
