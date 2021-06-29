@@ -51,6 +51,12 @@ int X509_REQ_verify(X509_REQ *a, EVP_PKEY *r)
     return X509_REQ_verify_ex(a, r, NULL, NULL);
 }
 
+int X509_ACERT_verify(X509_ACERT *a, EVP_PKEY *r)
+{
+    return ASN1_item_verify(ASN1_ITEM_rptr(X509_ACERT_INFO),
+                            &a->sig_alg, &a->signature, a->acinfo, r);
+}
+
 int NETSCAPE_SPKI_verify(NETSCAPE_SPKI *a, EVP_PKEY *r)
 {
     return ASN1_item_verify(ASN1_ITEM_rptr(NETSCAPE_SPKAC),
