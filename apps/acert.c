@@ -49,7 +49,7 @@ typedef enum OPTION_choice {
     OPT_COMMON,
     OPT_INFORM, OPT_OUTFORM, OPT_ENGINE,
     OPT_NEW, OPT_CONFIG, OPT_KEYFORM, OPT_IN, OPT_OUT,
-    OPT_SIGOPT, OPT_NOOUT, OPT_VERBOSE, OPT_UTF8,
+    OPT_SIGOPT, OPT_VERIFY, OPT_NOOUT, OPT_VERBOSE, OPT_UTF8,
     OPT_NAMEOPT, OPT_HOLDER, OPT_CERTOPT, OPT_TEXT,
     OPT_HOLDER_BASECERTID, OPT_HOLDER_NAME,
     OPT_AA, OPT_AAKEY, OPT_PASSIN,
@@ -67,6 +67,7 @@ const OPTIONS acert_options[] = {
 #endif
     {"in", OPT_IN, '<', "X.509 request input file"},
     {"inform", OPT_INFORM, 'F', "Input format - DER or PEM"},
+    {"verify", OPT_VERIFY, '-', "Verify signature on the attribue certificate"},
 
     OPT_SECTION("Certificate"),
     {"new", OPT_NEW, '-', "New Attribute Certificate"},
@@ -196,7 +197,7 @@ int acert_main(int argc, char **argv)
     int days = DEFAULT_DAYS;
     int ret = 1, i = 0, newacert = 0, verbose = 0;
     int informat = FORMAT_PEM, outformat = FORMAT_PEM, keyform = FORMAT_UNDEF;
-    int noout = 0, text = 0;
+    int verify = 0, noout = 0, text = 0;
     unsigned long chtype = MBSTRING_ASC, certflag = 0;
     char *startdate = NULL, *enddate = NULL;
 
@@ -254,6 +255,9 @@ int acert_main(int argc, char **argv)
                 sigopts = sk_OPENSSL_STRING_new_null();
             if (!sigopts || !sk_OPENSSL_STRING_push(sigopts, opt_arg()))
                 goto opthelp;
+            break;
+        case OPT_VERIFY:
+            verify = 1;
             break;
         case OPT_NOOUT:
             noout = 1;
@@ -542,6 +546,13 @@ int acert_main(int argc, char **argv)
 
         if (!do_X509_ACERT_sign(acert, AAkey, digest, sigopts))
             goto end;
+    }
+
+    if (verify) {
+        if (X509_ACERT_verify_cert(acert, holder, AAcert) <= 0) {
+            BIO_printf(bio_err, "Attribute certificate verify failure\n");
+            goto end;
+        }
     }
 
     if (noout && !text) {
