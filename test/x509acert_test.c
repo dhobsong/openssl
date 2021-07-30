@@ -18,6 +18,7 @@ static int test_read_acert(void)
 {
     X509_ACERT *acert = NULL;
     BIO *bp = NULL, *bout = NULL;
+    int att_ind;
     int ret = 0;
 
     if (!TEST_ptr(bp = BIO_new_file(acert_file, "r")))

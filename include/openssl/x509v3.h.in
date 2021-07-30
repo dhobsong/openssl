@@ -1114,6 +1114,15 @@ void *IETF_ATTR_SYNTAX_get0_value(const IETF_ATTR_SYNTAX *a, int ind, int *type)
 int IETF_ATTR_SYNTAX_add1_value(IETF_ATTR_SYNTAX *a, int type, void *data);
 int IETF_ATTR_SYNTAX_print(BIO *bp, IETF_ATTR_SYNTAX *a, int indent);
 
+typedef struct ROLE_SYNTAX_st ROLE_SYNTAX;
+DECLARE_ASN1_FUNCTIONS(ROLE_SYNTAX)
+
+const GENERAL_NAMES *ROLE_SYNTAX_get0_rsAuthority(const ROLE_SYNTAX *rs);
+void ROLE_SYNTAX_set0_roleAuthority(ROLE_SYNTAX *rs, GENERAL_NAMES *names);
+GENERAL_NAME *ROLE_SYNTAX_get0_rs(ROLE_SYNTAX *rs);
+int ROLE_SYNTAX_set1_role(ROLE_SYNTAX *rs, GENERAL_NAME *role);
+int ROLE_SYNTAX_print(BIO *bp, ROLE_SYNTAX *rs, int indent);
+
 # ifdef  __cplusplus
 }
 # endif

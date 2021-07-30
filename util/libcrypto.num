@@ -5516,3 +5516,13 @@ X509V3_EXT_ACERT_add_nconf              ?	3_0_0	EXIST::FUNCTION:
 X509V3_EXT_ACERT_add_conf               ?	3_0_0	EXIST::FUNCTION:
 X509_ACERT_verify                       ?	3_0_0	EXIST::FUNCTION:
 X509_ACERT_verify_cert                  ?	3_0_0	EXIST::FUNCTION:
+d2i_ROLE_SYNTAX                         ?	3_0_0	EXIST::FUNCTION:
+i2d_ROLE_SYNTAX                         ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_free                        ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_new                         ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_it                          ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_get0_rsAuthority            ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_set0_roleAuthority          ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_get0_rs                     ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_set1_role                   ?	3_0_0	EXIST::FUNCTION:
+ROLE_SYNTAX_print                       ?	3_0_0	EXIST::FUNCTION:
