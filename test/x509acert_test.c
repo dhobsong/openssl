@@ -33,6 +33,61 @@ static int test_read_acert(void)
     if (!TEST_int_gt(X509_ACERT_print(bout, acert), 0))
         goto err;
 
+    /* Print the attributes that we know about if they exist */
+    if ((att_ind = X509_ACERT_get_attr_by_NID(acert, NID_id_aca_group, -1)) >= 0) {
+        ASN1_TYPE *at;
+        IETF_ATTR_SYNTAX *ias;
+        const unsigned char *data;
+        X509_ATTRIBUTE *attr = X509_ACERT_get_attr(acert, att_ind);
+
+        if (attr == NULL)
+            goto err;
+
+        if (BIO_puts(bout, "Group Attribute:\n") <= 0)
+            goto err;
+
+        at = X509_ATTRIBUTE_get0_type(attr, 0);
+        data = at->value.sequence->data;
+        ias = d2i_IETF_ATTR_SYNTAX(NULL, &data, at->value.sequence->length);
+
+        if (ias == NULL)
+            goto err;
+
+        if (IETF_ATTR_SYNTAX_print(bout, ias, 8) <= 0) {
+            IETF_ATTR_SYNTAX_free(ias);
+            goto err;
+        }
+
+        IETF_ATTR_SYNTAX_free(ias);
+    }
+
+    if ((att_ind = X509_ACERT_get_attr_by_NID(acert, NID_role, -1)) >= 0) {
+        ASN1_TYPE *at;
+        ROLE_SYNTAX *rs;
+        const unsigned char *data;
+        X509_ATTRIBUTE *attr = X509_ACERT_get_attr(acert, att_ind);
+
+        if (attr == NULL)
+            goto err;
+
+        if (BIO_puts(bout, "Role Attribute:\n") <= 0)
+            goto err;
+
+        at = X509_ATTRIBUTE_get0_type(attr, 0);
+        data = at->value.sequence->data;
+        rs = d2i_ROLE_SYNTAX(NULL, &data, at->value.sequence->length);
+
+        if (rs == NULL)
+            goto err;
+
+        if (ROLE_SYNTAX_print(bout, rs, 8) <= 0) {
+            ROLE_SYNTAX_free(rs);
+            goto err;
+        }
+
+        ROLE_SYNTAX_free(rs);
+    }
+
     ret = 1;
 err:
     BIO_free(bp);
