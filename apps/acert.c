@@ -7,8 +7,13 @@
  * https://www.openssl.org/source/license.html
  */
 
-#ifndef _DEFAULT_SOURCE
-# define _DEFAULT_SOURCE /* for timegm() from time.h */
+#include <openssl/e_os2.h>
+#ifdef OPENSSL_SYS_WINDOWS
+# define timegm _mkgmtime
+#else
+# ifndef _DEFAULT_SOURCE
+#  define _DEFAULT_SOURCE /* for timegm() from time.h */
+# endif
 #endif
 
 #include <ctype.h>
