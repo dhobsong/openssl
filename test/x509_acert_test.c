@@ -99,6 +99,46 @@ done:
     return ret;
 }
 
+static int test_object_digest(void)
+{
+    X509_ACERT *acert = X509_ACERT_dup(orig_acert);
+    OSSL_OBJECT_DIGEST_INFO *digest;
+    X509_ALGOR *alg;
+    EVP_MD *md;
+    ASN1_BIT_STRING *data;
+    int ret = 0;
+
+    if (!TEST_ptr(acert))
+        return 0;
+
+    if (!TEST_ptr(digest = OSSL_OBJECT_DIGEST_INFO_new()))
+	return 0;
+
+    alg = X509_ALGOR_new();
+    X509_ALGOR_set_md(alg, EVP_sha256());
+
+    data = ASN1_BIT_STRING_new();
+    ASN1_BIT_STRING_set(data, (unsigned char *){"data"}, 4);
+
+    if (!TEST_int_eq(OSSL_OBJECT_DIGEST_INFO_set1_digest(digest,
+        OSSL_OBJECT_DIGEST_INFO_PUBLIC_KEY, alg, data), 1)) {
+        goto err;
+    }
+
+    ASN1_STRING_free(data);
+    X509_ALGOR_free(alg);
+
+    X509_ACERT_set0_holder_digest(acert, digest);
+
+    if (!TEST_int_eq(print_acert(orig_acert), 1))
+        goto err;
+
+    ret = 1;
+err:
+    X509_ACERT_free(acert);
+    return ret;
+}
+
 static int test_acert_sign(void)
 {
     int ret = 0;
@@ -154,6 +194,7 @@ int setup_tests(void)
     BIO_free(bp);
 
     ADD_TEST(test_print_acert);
+    ADD_TEST(test_object_digest);
     ADD_TEST(test_object_group_attr);
     ADD_TEST(test_acert_sign);
 
